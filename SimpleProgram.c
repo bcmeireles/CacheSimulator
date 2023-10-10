@@ -30,7 +30,7 @@ int main() {
 
   printf("\nRandom accesses\n");
 
-  // // Do random accesses to the cache
+  // Do random accesses to the cache
   for(int i = 0; i < 100; i++) {
     int address = rand() % (DRAM_SIZE/4);
     address = address - address % WORD_SIZE;
