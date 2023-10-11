@@ -1,5 +1,5 @@
-#ifndef L2CACHE_H
-#define L2CACHE_H
+#ifndef L21WCACHE_H
+#define L21WCACHE_H
 
 #include <stdio.h>
 #include <stdlib.h>

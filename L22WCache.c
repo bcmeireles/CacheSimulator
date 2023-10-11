@@ -1,4 +1,4 @@
-#include "L3Cache.h"
+#include "L22WCache.h"
 
 uint8_t L1Cache[L1_SIZE]; // Represents the L1 cache memory.
 uint8_t L2Cache[L2_SIZE]; // Represents the L2 cache memory
