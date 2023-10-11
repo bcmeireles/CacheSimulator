@@ -49,11 +49,11 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
       switch (mode) {
         case MODE_READ:
           memcpy(data, &(cache.L2.Lines[index][i].Data[offset]), WORD_SIZE);
-          time += L2_READ_TIME;
+          time += L1_READ_TIME;
           break;
         case MODE_WRITE:
           memcpy(&(cache.L2.Lines[index][i].Data[offset]), data, WORD_SIZE);
-          time += L2_WRITE_TIME;
+          time += L1_WRITE_TIME;
           cache.L2.Lines[index][i].Dirty = 1;
           break;
       }
