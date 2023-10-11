@@ -179,14 +179,17 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
     accessL2(address - offset, Line->Data, MODE_READ);
 
-    if (mode == MODE_READ) {
-      memcpy(data, &(Line->Data[offset]), WORD_SIZE);
-      time += L1_READ_TIME;
-      Line->Dirty = 0;
-    } else if (mode == MODE_WRITE) {
-      memcpy(&(Line->Data[offset]), data, WORD_SIZE);
-      time += L1_WRITE_TIME;
-      Line->Dirty = 1;
+    switch (mode) {
+      case MODE_READ:
+        memcpy(data, &(Line->Data[offset]), WORD_SIZE);
+        time += L1_READ_TIME;
+        Line->Dirty = 0;
+        break;
+      case MODE_WRITE:
+        memcpy(&(Line->Data[offset]), data, WORD_SIZE);
+        time += L1_WRITE_TIME;
+        Line->Dirty = 1;
+        break;
     }
 
     Line->Valid = 1;
