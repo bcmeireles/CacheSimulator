@@ -73,8 +73,6 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   index = (address / BLOCK_SIZE) % (L1_SIZE / BLOCK_SIZE); // Calculates the index of the cache line by dividing the address by the size of a block (BLOCK_SIZE) and then taking the remainder of that division when divided by the size of the cache (L1_SIZE)
   offset = address % BLOCK_SIZE; // Calculates the offset of the memory address by taking the remainder of the address when divided by the size of a block (BLOCK_SIZE)
 
-
-
   CacheLine *Line = &cache.Lines[index]; // A pointer to the cache line within the cache
 
   /* access Cache*/

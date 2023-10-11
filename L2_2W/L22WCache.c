@@ -35,70 +35,6 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
 void initCache() { cache.init = 0; } // Initializes the L1 cache
 
-void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
-  uint32_t index, Tag, offset;
-
-  Tag = address / ((L2_SIZE / (BLOCK_SIZE * ASSOCIATIVITY_L2)) * BLOCK_SIZE);
-  index = (address / BLOCK_SIZE) % (L2_SIZE / (BLOCK_SIZE * ASSOCIATIVITY_L2));
-  offset = address % BLOCK_SIZE;
-
-  int match = 0;
-
-  for (int i = 0; i < ASSOCIATIVITY_L2; i++) {
-    if (cache.L2.Lines[index][i].Valid && cache.L2.Lines[index][i].Tag == Tag) {
-      switch (mode) {
-        case MODE_READ:
-          memcpy(data, &(cache.L2.Lines[index][i].Data[offset]), WORD_SIZE);
-          time += L1_READ_TIME;
-          break;
-        case MODE_WRITE:
-          memcpy(&(cache.L2.Lines[index][i].Data[offset]), data, WORD_SIZE);
-          time += L1_WRITE_TIME;
-          cache.L2.Lines[index][i].Dirty = 1;
-          break;
-      }
-      cache.L2.Lines[index][i].Time = time;
-      match = 1;
-      break;
-    }
-  }
-
-  if (match == 0) {
-    int i = 0;
-    while (i < ASSOCIATIVITY_L2 && cache.L2.Lines[index][i].Valid) {
-      i++;
-    }
-    if (i == ASSOCIATIVITY_L2) {
-      i = 0;
-      unsigned int min = cache.L2.Lines[index][0].Time;
-      for (int j = 1; j < ASSOCIATIVITY_L2; j++) {
-        if (cache.L2.Lines[index][j].Time < min) {
-          min = cache.L2.Lines[index][j].Time;
-          i = j;
-        }
-      }
-    }
-    if (cache.L2.Lines[index][i].Dirty) {
-      accessDRAM(cache.L2.Lines[index][i].Tag * (L2_SIZE / (BLOCK_SIZE * ASSOCIATIVITY_L2)) * BLOCK_SIZE + index * BLOCK_SIZE, cache.L2.Lines[index][i].Data, MODE_WRITE);
-      cache.L2.Lines[index][i].Data[0] = 0;
-      cache.L2.Lines[index][i].Data[WORD_SIZE] = 0;
-    }
-
-    accessDRAM(address - offset, cache.L2.Lines[index][i].Data, MODE_READ);
-
-    cache.L2.Lines[index][i].Valid = 1;
-    cache.L2.Lines[index][i].Dirty = 0;
-    cache.L2.Lines[index][i].Tag = Tag;
-    cache.L2.Lines[index][i].Time = time;
-
-    if (mode == MODE_READ) {
-      memcpy(data, &(cache.L2.Lines[index][i].Data), BLOCK_SIZE);
-      time += L2_READ_TIME;
-    }
-
-  }
-}
-
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   /*
   Simulates access to the L1 cache. It uses a 1-line directly mapped cache. 
@@ -207,6 +143,70 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
         Line->Dirty = 1;
         break;
     }
+  }
+}
+
+void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
+  uint32_t index, Tag, offset;
+
+  Tag = address / ((L2_SIZE / (BLOCK_SIZE * ASSOCIATIVITY_L2)) * BLOCK_SIZE);
+  index = (address / BLOCK_SIZE) % (L2_SIZE / (BLOCK_SIZE * ASSOCIATIVITY_L2));
+  offset = address % BLOCK_SIZE;
+
+  int match = 0;
+
+  for (int i = 0; i < ASSOCIATIVITY_L2; i++) {
+    if (cache.L2.Lines[index][i].Valid && cache.L2.Lines[index][i].Tag == Tag) {
+      switch (mode) {
+        case MODE_READ:
+          memcpy(data, &(cache.L2.Lines[index][i].Data[offset]), WORD_SIZE);
+          time += L1_READ_TIME;
+          break;
+        case MODE_WRITE:
+          memcpy(&(cache.L2.Lines[index][i].Data[offset]), data, WORD_SIZE);
+          time += L1_WRITE_TIME;
+          cache.L2.Lines[index][i].Dirty = 1;
+          break;
+      }
+      cache.L2.Lines[index][i].Time = time;
+      match = 1;
+      break;
+    }
+  }
+
+  if (match == 0) {
+    int i = 0;
+    while (i < ASSOCIATIVITY_L2 && cache.L2.Lines[index][i].Valid) {
+      i++;
+    }
+    if (i == ASSOCIATIVITY_L2) {
+      i = 0;
+      uint8_t min = cache.L2.Lines[index][0].Time;
+      for (int j = 1; j < ASSOCIATIVITY_L2; j++) {
+        if (cache.L2.Lines[index][j].Time < min) {
+          min = cache.L2.Lines[index][j].Time;
+          i = j;
+        }
+      }
+    }
+    if (cache.L2.Lines[index][i].Dirty) {
+      accessDRAM(cache.L2.Lines[index][i].Tag * (L2_SIZE / (BLOCK_SIZE * ASSOCIATIVITY_L2)) * BLOCK_SIZE + index * BLOCK_SIZE, cache.L2.Lines[index][i].Data, MODE_WRITE);
+      cache.L2.Lines[index][i].Data[0] = 0;
+      cache.L2.Lines[index][i].Data[WORD_SIZE] = 0;
+    }
+
+    accessDRAM(address - offset, cache.L2.Lines[index][i].Data, MODE_READ);
+
+    cache.L2.Lines[index][i].Valid = 1;
+    cache.L2.Lines[index][i].Dirty = 0;
+    cache.L2.Lines[index][i].Tag = Tag;
+    cache.L2.Lines[index][i].Time = time;
+
+    if (mode == MODE_READ) {
+      memcpy(data, &(cache.L2.Lines[index][i].Data), BLOCK_SIZE);
+      time += L2_READ_TIME;
+    }
+
   }
 }
 

@@ -35,52 +35,6 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
 void initCache() { cache.init = 0; } // Initializes the L1 cache
 
-void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
-  uint32_t index, Tag, offset;
-
-  Tag = address / ((L2_SIZE / BLOCK_SIZE) * BLOCK_SIZE);
-  index = (address / BLOCK_SIZE) % (L2_SIZE / BLOCK_SIZE);
-  offset = address % BLOCK_SIZE;
-
-  CacheLine *Line = &cache.L2.Lines[index];
-
-  if (!Line->Valid || Line->Tag != Tag) {
-    if ((Line->Valid) && (Line->Dirty)) {
-      accessDRAM((Line->Tag * (L2_SIZE / BLOCK_SIZE)) + (index * BLOCK_SIZE), Line->Data, MODE_WRITE);
-    }
-
-    accessDRAM(address - offset, Line->Data, MODE_READ);
-
-    switch (mode) {
-      case MODE_READ:
-        memcpy(data, &(Line->Data[offset]), WORD_SIZE);
-        time += L2_READ_TIME;
-        break;
-      case MODE_WRITE:
-        memcpy(&(Line->Data[offset]), data, WORD_SIZE);
-        time += L2_WRITE_TIME;
-        Line->Dirty = 1;
-        break;
-    }
-
-    Line->Valid = 1;
-    Line->Tag = Tag;
-
-  } else {
-    switch (mode) {
-      case MODE_READ:
-        memcpy(data, &(Line->Data[offset]), WORD_SIZE);
-        time += L2_READ_TIME;
-        break;
-      case MODE_WRITE:
-        memcpy(&(Line->Data[offset]), data, WORD_SIZE);
-        time += L2_WRITE_TIME;
-        Line->Dirty = 1;
-        break;
-    }
-  }
-}
-
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   /*
   Simulates access to the L1 cache. It uses a 1-line directly mapped cache. 
@@ -184,6 +138,52 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
       case MODE_WRITE:
         memcpy(&(Line->Data[offset]), data, WORD_SIZE);
         time += L1_WRITE_TIME;
+        Line->Dirty = 1;
+        break;
+    }
+  }
+}
+
+void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
+  uint32_t index, Tag, offset;
+
+  Tag = address / ((L2_SIZE / BLOCK_SIZE) * BLOCK_SIZE);
+  index = (address / BLOCK_SIZE) % (L2_SIZE / BLOCK_SIZE);
+  offset = address % BLOCK_SIZE;
+
+  CacheLine *Line = &cache.L2.Lines[index];
+
+  if (!Line->Valid || Line->Tag != Tag) {
+    if ((Line->Valid) && (Line->Dirty)) {
+      accessDRAM((Line->Tag * (L2_SIZE / BLOCK_SIZE)) + (index * BLOCK_SIZE), Line->Data, MODE_WRITE);
+    }
+
+    accessDRAM(address - offset, Line->Data, MODE_READ);
+
+    switch (mode) {
+      case MODE_READ:
+        memcpy(data, &(Line->Data[offset]), WORD_SIZE);
+        time += L2_READ_TIME;
+        break;
+      case MODE_WRITE:
+        memcpy(&(Line->Data[offset]), data, WORD_SIZE);
+        time += L2_WRITE_TIME;
+        Line->Dirty = 1;
+        break;
+    }
+
+    Line->Valid = 1;
+    Line->Tag = Tag;
+
+  } else {
+    switch (mode) {
+      case MODE_READ:
+        memcpy(data, &(Line->Data[offset]), WORD_SIZE);
+        time += L2_READ_TIME;
+        break;
+      case MODE_WRITE:
+        memcpy(&(Line->Data[offset]), data, WORD_SIZE);
+        time += L2_WRITE_TIME;
         Line->Dirty = 1;
         break;
     }
